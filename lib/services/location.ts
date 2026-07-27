@@ -1,16 +1,20 @@
 import axios from "axios";
 
 interface CountryAPIResponse {
-  name: {
-    common: string;
-  };
-  cca2: string;
-  currencies?: {
-    [key: string]: {
-      name: string;
-      symbol?: string;
-    };
-  };
+  data: {
+    objects: ({
+      names: {
+        common: string;
+      };
+      codes: {alpha_2: string};
+      currencies?: ({
+        code: string,
+        name: string;
+        symbol: string
+      })[]
+    })[]
+  }
+  
 }
 
 // For `fetchStates` response
@@ -27,15 +31,29 @@ export interface Country {
 }
 
 export const fetchCountries = async (): Promise<Country[]> => {
-  const { data } = await axios.get<CountryAPIResponse[]>(
-    "https://restcountries.com/v3.1/all?fields=name,cca2,currencies"
+  const response1 = await axios.get<CountryAPIResponse>(
+    "https://api.restcountries.com/countries/v5?response_fields=names.common,codes.alpha_2,currencies&limit=100", 
+    {headers: {"Authorization": `Bearer ${process.env.NEXT_PUBLIC_RESTCOUNTRIES_API_KEY}`}}
   );
 
-  return data
+  const response2 = await axios.get<CountryAPIResponse>(
+    "https://api.restcountries.com/countries/v5?response_fields=names.common,codes.alpha_2,currencies&offset=100&limit=100", 
+    {headers: {"Authorization": `Bearer ${process.env.NEXT_PUBLIC_RESTCOUNTRIES_API_KEY}`}}
+  );
+
+  const response3 = await axios.get<CountryAPIResponse>(
+    "https://api.restcountries.com/countries/v5?response_fields=names.common,codes.alpha_2,currencies&offset=200&limit=100", 
+    {headers: {"Authorization": `Bearer ${process.env.NEXT_PUBLIC_RESTCOUNTRIES_API_KEY}`}}
+  );
+
+
+  const objects = [...response1.data.data.objects, ...response2.data.data.objects, ...response3.data.data.objects]
+  // console.log(objects);
+  return objects
     .map((c) => ({
-      name: c.name.common,
-      code: c.cca2,
-      currencies: Object.keys(c.currencies ?? {}),
+      name: c.names.common,
+      code: c.codes.alpha_2,
+      currencies: c.currencies ? c.currencies.map(curr => curr.code) : []
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 };
