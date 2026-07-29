@@ -11,7 +11,7 @@ const PROTECTED_PATHS = [
   "/report-analytics",
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Skip non-protected routes
